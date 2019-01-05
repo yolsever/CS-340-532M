@@ -1,0 +1,181 @@
+\documentclass{article}
+
+\usepackage{fullpage}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{parskip}
+\usepackage{amssymb}
+\usepackage{nicefrac}
+\usepackage{listings} % For displaying code
+\usepackage{algorithm2e} % pseudo-code
+
+% Answers
+\def\rubric#1{\gre{Rubric: \{#1\}}}{}
+
+% Colors
+\definecolor{blu}{rgb}{0,0,1}
+\def\blu#1{{\color{blu}#1}}
+\definecolor{gre}{rgb}{0,.5,0}
+\def\gre#1{{\color{gre}#1}}
+\definecolor{red}{rgb}{1,0,0}
+\def\red#1{{\color{red}#1}}
+\def\norm#1{\|#1\|}
+
+% Math
+\def\R{\mathbb{R}}
+\def\argmax{\mathop{\rm arg\,max}}
+\def\argmin{\mathop{\rm arg\,min}}
+\newcommand{\mat}[1]{\begin{bmatrix}#1\end{bmatrix}}
+\newcommand{\alignStar}[1]{\begin{align*}#1\end{align*}}
+\def\half{\frac 1 2}
+
+% LaTeX
+\newcommand{\fig}[2]{\includegraphics[width=#1\textwidth]{#2}}
+\newcommand{\centerfig}[2]{\begin{center}\includegraphics[width=#1\textwidth]{#2}\end{center}}
+\def\items#1{\begin{itemize}#1\end{itemize}}
+\def\enum#1{\begin{enumerate}#1\end{enumerate}}
+
+\begin{document}
+
+
+\title{CPSC 340 Assignment 6 (due Friday November 30th at 11:55pm)}
+\date{}
+\maketitle
+
+\vspace{-7em}
+
+
+\section*{Instructions}
+\rubric{mechanics:5}
+
+The above points are allocated for following the general homework instructions. 
+
+\section{Data Visualization}
+
+If you run \verb|python main.py -q 1|, it will load the animals dataset and create a scatterplot based on two randomly selected features.
+We label some points, but because of the binary features the scatterplot shows us almost nothing about the data. One such scatterplot looks like this:
+
+\centerfig{.5}{../figs/two_random_features.png}
+
+\subsection{PCA for visualization}
+\rubric{reasoning:2}
+
+Use scikit-learn's PCA to reduce this 85-dimensional dataset down to 2 dimensions, and plot the result. Briefly comment on the results (just say anything that makes sense and indicates that you actually looked at the plot).
+
+\subsection{Data Compression}
+\rubric{reasoning:2}
+
+\blu{\enum{
+\item How much of the variance is explained by our 2-dimensional representation from the previous question?
+\item How many PCs are required to explain 50\% of the variance in the data?
+}}
+
+
+\subsection{Multi-Dimensional Scaling}
+
+If you run \verb|python main.py -q 1.3|, the code will load the animals dataset and then apply gradient descent to minimize the following multi-dimensional scaling (MDS) objective (starting from the PCA solution):
+\begin{equation}
+\label{eq:MDS}
+f(Z) =  \frac{1}{2}\sum_{i=1}^n\sum_{j=i+1}^n (  \norm{z_i - z_j} - \norm{x_i - x_j})^2.
+\end{equation}
+ The result of applying MDS is shown below.
+\centerfig{.5}{../figs/MDS_animals.png}
+Although this visualization isn't perfect (with ``gorilla'' being placed close to the dogs and ``otter'' being placed close to two types of bears), this visualization does organize the animals in a mostly-logical way.
+\blu{Compare the MDS objective for the MDS solution vs. the PCA solution; is it indeed lower for the MDS solution?} 
+
+\subsection{ISOMAP}
+\rubric{code:10}
+
+Euclidean distances between very different animals are unlikely to be particularly meaningful.
+However, since related animals tend to share similar traits we might expect the animals to live on a low-dimensional manifold.
+This suggests that ISOMAP may give a better visualization.
+Fill in the class \emph{ISOMAP} so that it computes the approximate geodesic distance
+(shortest path through a graph where the edges are only between nodes that are $k$-nearest neighbours) between each pair of points,
+and then fits a standard MDS model~\eqref{eq:MDS} using gradient descent. \blu{Plot the results using $2$ and using $3$-nearest neighbours}.
+
+Note: when we say $2$ nearest neighbours, we mean the two closest neigbours excluding the point itself. This is the opposite convention from what we used in KNN at the start of the course.
+
+The function \emph{utils.dijskstra} can be used to compute the shortest (weighted) distance between two points in a weighted graph.
+This function requires an $n \times n$ matrix giving the weights on each edge (use $0$ as the weight for absent edges).
+Note that ISOMAP uses an undirected graph, while the $k$-nearest neighbour graph might be asymmetric.
+One of the usual heuristics to turn this into a undirected graph is to include an edge $i$ to $j$ if $i$ is a KNN of $j$ or if $j$ is a KNN of $i$.
+(Another possibility is to include an edge only if $i$ and $j$ are mutually KNNs.)
+
+
+
+\subsection{t-SNE}
+\rubric{reasoning:1}
+
+Try running scikit-learn's t-SNE on this dataset as well. \blu{Submit the plot from running t-SNE. Then, briefly comment on PCA vs. MDS vs. ISOMAP vs. t-SNE for dimensionality reduction on this particular data set. In your opinion, which method did the best job and why?}
+
+Note: There is no single correct answer here! Also, please do not write more than 3 sentences.
+
+
+\subsection{Sensitivity to Initialization}
+\rubric{reasoning:2}
+
+For each of the four methods (PCA, MDS, ISOMAP, t-SNE) tried above, which ones give different results when you re-run the code? Does this match up with what we discussed in lectures, about which methods are sensitive to initialization and which ones aren't? Briefly discuss.
+
+
+\section{Neural Networks}
+
+\textbf{NOTE}: before starting this question you need to download the MNIST dataset from \\ \url{http://deeplearning.net/data/mnist/mnist.pkl.gz} and place it in your \emph{data} directory.
+
+
+\subsection{Neural Networks by Hand}
+\rubric{reasoning:5}
+
+Suppose that we train a neural network with sigmoid activations and one hidden layer and obtain the following parameters (assume that we don't use any bias variables):
+\[
+W = \mat{-2 & 2 & -1\\1 & -2 & 0}, v = \mat{3 \\1}.
+\]
+Assuming that we are doing regression, \blu{for a training example with features $x_i^T = \mat{-3 &-2 & 2}$ what are the values in this network of $z_i$, $h(z_i)$, and $\hat{y}_i$?}
+
+\subsection{SGD for a Neural Network: implementation}
+\rubric{code:5}
+
+
+If you run \texttt{python main.py -q 2} it will train a one-hidden-layer neural network on the MNIST handwritten digits data set using the \texttt{findMin} gradient descent code from your previous assignments. After running for the default number of gradient descent iterations (100), it tends to get a training and test error of around 5\% (depending on the random initialization). 
+\blu{Modify the code to instead use stochastic gradient descent. Use a minibatch size of 500 (which is 1\% of the training data) and a constant learning rate of $\alpha=0.001$. Report your train/test errors after 10 epochs on the MNIST data.} 
+
+\subsection{SGD for a Neural Network: discussion}
+\rubric{reasoning:1}
+
+Compare the stochastic gradient implementation with the gradient descent implementation for this neural network. Which do you think is better? (There is no single correct answer here!) 
+
+\subsection{Hyperparameter Tuning}
+\rubric{reasoning:2}
+
+If you run \texttt{python main.py -q 2.4} it will train a neural network on the MNIST data using scikit-learn's neural network implementation (which, incidentally, was written by a former CPSC 340 TA).
+Using the default hyperparameters, the model achieves a training error of zero (or very tiny), and a test error of around 2\%. 
+Try to improve the performance of the neural network by tuning the hyperparemeters.
+\blu{Hand in a list changes you tried. Write a couple sentences explaining why you think your changes improved (or didn't improve) the performance. When appropriate, refer to concepts from the course like overfitting or optimization.}
+
+For a list of hyperparameters and their definitions, see the scikit-learn \texttt{MLPClassifier} documentation:\\
+\url{http://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html}. Note: ``MLP'' stands for Multi-Layer Perceptron,
+which is another name for artificial neural network.
+
+\section{Very-Short Answer Questions}
+\rubric{reasoning:12}
+
+\enum{
+\item Is non-negative least squares convex?
+\item Name two reasons you might want sparse solutions with a latent-factor model.
+\item Is ISOMAP mainly used for supervised or unsupervised learning? Is it parametric or non-parametric?
+\item Which is better for recommending moves to a new user, collaborative filtering or content-based filtering? Briefly justify your answer.
+\item Collaborative filtering and PCA both minimizing the squared error when approximating each $x_{ij}$ by $\langle w^j, z_i\rangle$; what are two differences between them?
+\item{Are neural networks mainly used for supervised or unsupervised learning? Are they parametric or nonparametric?}
+\item{Why might regularization become more important as we add layers to a neural network?}
+\item With stochastic gradient descent, the loss might go up or down each time the parameters are updated. However, we don't actually know which of these cases occurred. Explain why it doesn't make sense to check whether the loss went up/down after each update.
+\item{Consider using a fully-connected neural network for 3-class classification on a problem with $d=10$. If the network has one hidden layer of size $k=100$, how many parameters (including biases), does the network have?}
+\item{The loss for a neural network is typically non-convex. Give one set of hyperparameters for which the loss is actually convex.}
+\item What is the ``vanishing gradient'' problem with neural networks based on sigmoid non-linearities?
+\item{Convolutional networks seem like a pain... why not just use regular (``fully connected'') neural networks for image classification?}
+}
+
+
+
+\end{document}

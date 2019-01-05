@@ -1,0 +1,345 @@
+\documentclass{article}
+
+\usepackage{fullpage}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{parskip}
+\usepackage{amssymb}
+\usepackage{nicefrac}
+\usepackage{listings} % For displaying code
+\usepackage{algorithm2e} % pseudo-code
+
+\def\rubric#1{\gre{Rubric: \{#1\}}}{}
+
+% Colors
+\definecolor{blu}{rgb}{0,0,1}
+\def\blu#1{{\color{blu}#1}}
+\definecolor{gre}{rgb}{0,.5,0}
+\def\gre#1{{\color{gre}#1}}
+\definecolor{red}{rgb}{1,0,0}
+\def\red#1{{\color{red}#1}}
+\def\norm#1{\|#1\|}
+
+% Math
+\def\R{\mathbb{R}}
+\def\argmax{\mathop{\rm arg\,max}}
+\def\argmin{\mathop{\rm arg\,min}}
+\newcommand{\mat}[1]{\begin{bmatrix}#1\end{bmatrix}}
+\newcommand{\alignStar}[1]{\begin{align*}#1\end{align*}}
+\def\half{\frac 1 2}
+
+% LaTeX
+\newcommand{\fig}[2]{\includegraphics[width=#1\textwidth]{#2}}
+\newcommand{\centerfig}[2]{\begin{center}\includegraphics[width=#1\textwidth]{#2}\end{center}}
+\newcommand{\matCode}[1]{\lstinputlisting[language=Matlab]{a2f/#1.m}}
+\def\items#1{\begin{itemize}#1\end{itemize}}
+\def\enum#1{\begin{enumerate}#1\end{enumerate}}
+
+\begin{document}
+
+\title{CPSC 340 Assignment 3 (due Friday, Oct 12 at 11:55pm)}
+\date{}
+\maketitle
+
+\vspace{-7em}
+
+\section*{Instructions}
+\rubric{mechanics:3}
+
+The above points are allocated for following the general homework instructions on the course homepage.
+
+
+\section{Finding Similar Items}
+
+For this question we'll use the Amazon product data set\footnote{The author of the data set has asked for the following citations: (1) Ups and downs: Modeling the visual evolution of fashion trends with one-class collaborative filtering. R. He, J. McAuley. WWW, 2016, and (2) Image-based recommendations on styles and substitutes. J. McAuley, C. Targett, J. Shi, A. van den Hengel. SIGIR, 2015.} from \url{http://jmcauley.ucsd.edu/data/amazon/}. We will focus on the ``Patio, Lawn, and Garden'' section. You should start by downloading the ratings at \\
+\url{https://stanford.io/2Q7QTvu} and place the file in your \texttt{data} directory with the original filename. Once you do that, running \texttt{python main.py -q 1} should do the following steps:
+
+\begin{itemize}
+\item Load the raw ratings data set into a Pandas dataframe.
+\item Construct the user-product matrix as a sparse matrix (to be precise, a \verb|scipy.sparse.csr_matrix|).
+\item Create bi-directional mappings from the user ID (e.g. ``A2VNYWOPJ13AFP'') to the integer index into the rows of \texttt{X}.
+\item Create bi-directional mappings from the item ID (e.g. ``0981850006'') to the integer index into the columns of \texttt{X}.
+\end{itemize}
+
+\subsection{Exploratory data analysis}
+
+\subsubsection{Most popular item}
+\rubric{code:1}
+
+Find the item with the most total stars. \blu{Submit the product name and the number of stars}.
+
+Note: once you find the ID of the item, you can look up the name by going to the url \\ \verb|https://www.amazon.com/dp/ITEM_ID|, where \verb|ITEM_ID| is the ID of the item.
+For example, the URL for item ID ``B00CFM0P7Y'' is \url{https://www.amazon.com/dp/B00CFM0P7Y}. 
+
+
+\subsubsection{User with most reviews}
+\rubric{code:1}
+
+\blu{Find the user who has rated the most items, and the number of items they rated.}
+
+
+\subsubsection{Histograms}
+\rubric{code:2}
+
+\blu{Make the following histograms:}
+\begin{enumerate}
+\item The number of ratings per user
+\item The number of ratings per item
+\item The ratings themselves
+\end{enumerate}
+
+Note: for the first two, use \verb|plt.yscale('log', nonposy='clip')| to put the histograms on a log-scale. Also, you can use \verb|X.getnnz| to get the total number of nonzero elements along a specific axis.
+
+\subsection{Finding similar items with nearest neighbours}
+\rubric{code:6}
+
+We'll use scikit-learn's \texttt{neighbors.NearestNeighbors} object to find the items most similar to the example item above, namely the Brass Grill Brush 18 Inch Heavy Duty and Extra Strong, Solid Oak Handle, at URL \url{https://www.amazon.com/dp/B00CFM0P7Y}.
+
+\blu{Find the 5 most similar items to the Grill Brush using the following metrics:}
+
+\begin{enumerate}
+\item Euclidean distance (the \texttt{NearestNeighbors} default)
+\item Normalized Euclidean distance (you'll need to do the normalization)
+\item Cosine similarity (by setting \texttt{metric='cosine'})
+\end{enumerate}
+
+Some notes/hints...
+
+\begin{itemize}
+\item If you run \texttt{python main.py -q 1.2}, it will grab the row of \texttt{X} associated with the grill brush. The mappers take care of going back and forther between the IDs (like ``B00CFM0P7Y'') and the indices of the sparse array ($0,1,2,\ldots$).
+\item Keep in mind that scikit-learn's \texttt{NearestNeighbors} is for taking neighbors across rows, but here we're working across columns.
+\item Keep in mind that scikit-learn's \texttt{NearestNeighbors} will include the query item itself as one of the nearest neighbours if the query item is in the ``training set''.
+\item Normalizing the columns of a matrix would usually be reasonable to implement, but because $X$ is stored as a sparse matrix it's a bit more of a mess. Therefore, use \texttt{sklearn.preprocessing.normalize} to help you with the normalization in part 2.
+\end{itemize}
+
+\blu{Did normalized Euclidean distance and cosine similarity yields the same similar items, as expected?}
+
+
+\subsection{Total popularity}
+\rubric{reasoning:2}
+
+\blu{For both Euclidean distance and cosine similarity, find the number of reviews for each of the 5 recommended items and report it. Do the results make sense given what we discussed in class about Euclidean distance vs. cosine similarity and popular items?}
+
+Note: in \texttt{main.py} you are welcome to combine this code with your code from the previous part, so that you don't have to copy/paste all that code in another section of \texttt{main.py}.
+
+
+\section{Matrix Notation and Minimizing Quadratics}
+
+
+\subsection{Converting to Matrix/Vector/Norm Notation}
+\rubric{reasoning:3}
+
+Using our standard supervised learning notation ($X$, $y$, $w$)
+express the following functions in terms of vectors, matrices, and norms (there should be no summations or maximums).
+\blu{\enum{
+\item $\max_{i \in \{1,2,\dots,n\}}  |w^Tx_i - y_i|$.
+\item $\sum_{i=1}^n v_i(w^Tx_i  - y_i)^2 + \frac{\lambda}{2}\sum_{j=1}^d w_j^2$.
+\item $\left(\sum_{i=1}^n |w^Tx_i - y_i|\right)^2 +  \half\sum_{j=1}^{d} \lambda_j|w_j|$.
+}}
+Note that in part 2 we give a \emph{weight} $v_i$ to each training example, whereas in part 3 we are regularizing the parameters with different weights $\lambda_j$.
+You can use $V$ to denote a diagonal matrix that has the values $v_i$ along the diagonal, and $\Lambda$ as a diagonal matrix that has the $\lambda_j$ values along the diagonal. You can assume that all the $v_i$ and $\lambda_i$ values are non-negative. 
+
+\subsection{Minimizing Quadratic Functions as Linear Systems}
+\rubric{reasoning:3}
+
+Write finding a minimizer $w$ of the functions below as a system of linear equations (using vector/matrix notation and simplifying as much as possible). Note that all the functions below are convex  so finding a $w$ with $\nabla f(w) = 0$ is sufficient to minimize the functions (but show your work in getting to this point).
+
+\blu{\enum{
+\item $f(w) = \frac{1}{2}\norm{w-v}^2$ (projection of $v$ onto real space).
+\item $f(w)= \frac{1}{2}\norm{Xw - y}^2 + \frac{1}{2}w^T\Lambda w$ (least squares with weighted regularization).
+\item $f(w) = \frac{1}{2}\sum_{i=1}^n v_i (w^Tx_i - y_i)^2 + \frac{\lambda}{2}\norm{w-w^0}^2$ (weighted least squares shrunk towards non-zero $w^0$).
+}}
+Above we assume that $v$ and $w^0$ are $d$ by $1$ vectors, and $\Lambda$ is a $d$ by $d$ diagonal matrix (with positive entries along the diagonal). You can use $V$ as a diagonal matrix containing the $v_i$ values along the diagonal.
+
+Hint: Once you convert to vector/matrix notation, you can use the results from class to quickly compute these quantities term-wise.
+As a sanity check for your derivation, make sure that your results have the right dimensions.
+
+
+
+\section{Robust Regression and Gradient Descent}
+
+If you run \verb|python main.py -q 3|, it will load a one-dimensional regression
+dataset that has a non-trivial number of `outlier' data points.
+These points do not fit the general trend of the rest of the data,
+and pull the least squares model away from the main downward trend that most data points exhibit:
+\centerfig{.7}{../figs/least_squares_outliers.pdf}
+
+Note: we are fitting the regression without an intercept here, just for simplicity of the homework question.
+In reality one would rarely do this. But here it's OK because the ``true'' line
+passes through the origin (by design). In Q\ref{biasvar} we'll address this explicitly.
+
+\subsection{Weighted Least Squares in One Dimension}
+\rubric{code:3}
+
+One of the most common variations on least squares is \emph{weighted} least squares. In this formulation, we have a weight $v_i$ for every training example. To fit the model, we minimize the weighted squared error,
+\[
+f(w) =  \frac{1}{2}\sum_{i=1}^n v_i(w^Tx_i - y_i)^2.
+\]
+In this formulation, the model focuses on making the error small for examples $i$ where $v_i$ is high. Similarly, if $v_i$ is low then the model allows a larger error. Note: these weights $v_i$ (one per training example) are completely different from the model parameters $w_j$ (one per feature), which, confusingly, we sometimes also call "weights".
+
+Complete the model class, \texttt{WeightedLeastSquares}, that implements this model
+(note that Q2.2.3 asks you to show how a few similar formulation can be solved as a linear system).
+Apply this model to the data containing outliers, setting $v = 1$ for the first
+$400$ data points and $v = 0.1$ for the last $100$ data points (which are the outliers).
+\blu{Hand in your code and the updated plot}.
+
+\subsection{Smooth Approximation to the L1-Norm}
+\rubric{reasoning:3}
+
+Unfortunately, we typically do not know the identities of the outliers. In situations where we suspect that there are outliers, but we do not know which examples are outliers, it makes sense to use a loss function that is more robust to outliers. In class, we discussed using the sum of absolute values objective,
+\[
+f(w) = \sum_{i=1}^n |w^Tx_i - y_i|.
+\]
+This is less sensitive to outliers than least squares, but it is non-differentiable and harder to optimize. Nevertheless, there are various smooth approximations to the absolute value function that are easy to optimize. One possible approximation is to use the log-sum-exp approximation of the max function\footnote{Other possibilities are the Huber loss, or $|r|\approx \sqrt{r^2+\epsilon}$ for some small $\epsilon$.}:
+\[
+|r| = \max\{r, -r\} \approx \log(\exp(r) + \exp(-r)).
+\]
+Using this approximation, we obtain an objective of the form
+\[
+f(w) {=} \sum_{i=1}^n  \log\left(\exp(w^Tx_i - y_i) + \exp(y_i - w^Tx_i)\right).
+\]
+which is smooth but less sensitive to outliers than the squared error. \blu{Derive
+ the gradient $\nabla f$ of this function with respect to $w$. You should show your work but you do \underline{not} have to express the final result in matrix notation.}
+
+\subsection{Robust Regression}
+\rubric{code:3}
+
+The class \texttt{LinearModelGradient} is the same as \texttt{LeastSquares}, except that it fits the least squares model using a gradient descent method. If you run \verb|python main.py -q 3.3| you'll see it produces the same fit as we obtained using the normal equations.
+
+The typical input to a gradient method is a function that, given $w$, returns $f(w)$ and $\nabla f(w)$. See \texttt{funObj} in \texttt{LinearModelGradient} for an example. Note that the \texttt{fit} function of \texttt{LinearModelGradient} also has a numerical check that the gradient code is approximately correct, since implementing gradients is often error-prone.\footnote{Sometimes the numerical gradient checker itself can be wrong. See CPSC 303 for a lot more on numerical differentiation.}
+
+An advantage of gradient-based strategies is that they are able to solve
+problems that do not have closed-form solutions, such as the formulation from the
+previous section. The class \texttt{LinearModelGradient} has most of the implementation
+of a gradient-based strategy for fitting the robust regression model under the log-sum-exp approximation.
+The only part missing is the function and gradient calculation inside the \texttt{funObj} code.
+\blu{Modify \texttt{funObj} to implement the objective function and gradient based on the smooth
+approximation to the absolute value function (from the previous section). Hand in your code, as well
+as the plot obtained using this robust regression approach.}
+
+
+\section{Linear Regression and Nonlinear Bases}
+
+In class we discussed fitting a linear regression model by minimizing the squared error.
+In this question, you will start with a data set where least squares performs poorly.
+You will then explore how adding a bias variable and using nonlinear (polynomial) bases can drastically improve the performance.
+You will also explore how the complexity of a basis affects both the training error and the test error.
+In the final part of the question, it will be up to you to design a basis with better performance than polynomial bases.
+
+\subsection{Adding a Bias Variable}
+\label{biasvar}
+\rubric{code:3}
+
+If you run  \verb|python main.py -q 4|, it will:
+\enum{
+\item Load a one-dimensional regression dataset.
+\item Fit a least-squares linear regression model.
+\item Report the training error.
+\item Report the test error (on a dataset not used for training).
+\item Draw a figure showing the training data and what the linear model looks like.
+}
+Unfortunately, this is an awful model of the data. The average squared training error on the data set is over 28000
+(as is the test error), and the figure produced by the demo confirms that the predictions are usually nowhere near
+ the training data:
+\centerfig{.5}{../figs/least_squares_no_bias.pdf}
+The $y$-intercept of this data is clearly not zero (it looks like it's closer to $200$),
+so we should expect to improve performance by adding a \emph{bias} (a.k.a. intercept) variable, so that our model is
+\[
+y_i = w^Tx_i + w_0.
+\]
+instead of
+\[
+y_i = w^Tx_i.
+\]
+\blu{In file \texttt{linear\string_model.py}, complete the class, \texttt{LeastSquaresBias},
+that has the same input/model/predict format as the \texttt{LeastSquares} class,
+but that adds a \emph{bias} variable (also called an intercept) $w_0$ (also called $\beta$ in lecture). Hand in your new class, the updated plot,
+and the updated training/test error.}
+
+Hint: recall that adding a bias $w_0$ is equivalent to adding a column of ones to the matrix $X$. Don't forget that you need to do the same transformation in the \texttt{predict} function.
+
+
+\subsection{Polynomial Basis}
+\rubric{code:4}
+
+Adding a bias variable improves the prediction substantially, but the model is still problematic because the target seems to be a \emph{non-linear} function of the input.
+Complete \texttt{LeastSquarePoly} class, that takes a data vector $x$ (i.e., assuming we only have one feature) and the polynomial order $p$. The function should perform a least squares fit based on a matrix $Z$ where each of its rows contains the values $(x_{i})^j$ for $j=0$ up to $p$. E.g., \texttt{LeastSquaresPoly.fit(x,y)}  with $p = 3$ should form the matrix
+\[
+Z =
+\left[\begin{array}{cccc}
+1 & x_1 & (x_1)^2 & (x_1)^3\\
+1 & x_2 & (x_2)^2 & (x_2)^3\\
+\vdots\\
+1 & x_n & (x_n)^2 & (x_N)^3\\
+\end{array}
+\right],
+\]
+and fit a least squares model based on it.
+\blu{Hand in the new class, and report the training and test error for $p = 0$ through $p= 10$. Explain the effect of $p$ on the training error and on the test error.}
+
+Note: you should write the code yourself; don't use a library like sklearn's \texttt{PolynomialFeatures}.
+
+
+\section{Very-Short Answer Questions}
+\rubric{reasoning:7}
+
+\begin{enumerate}
+\item Suppose that a training example is global outlier, meaning it is really far from all other data points. How is the cluster assignment of this example by $k$-means? And how is it set by density-based clustering?
+\item Why do need random restarts for $k$-means but not for density-based clustering?
+\item Can hierarchical clustering find non-convex clusters?
+\item For model-based outlier detection, list an example method and problem with identifying outliers using this method.
+\item For graphical-based outlier detection, list an example method and problem with identifying outliers using this method.
+\item For supervised outlier detection, list an example method and problem with identifying outliers using this method.
+\item If we want to do linear regression with 1 feature, explain why it would or would not make sense to use gradient descent to compute the least squares solution.
+\item Why do we typically add a column of $1$ values to $X$ when we do linear regression? Should we do this if we're using decision trees?
+\item If a function is convex, what does that say about stationary points of the function? Does convexity imply that a stationary points exists?
+\item Why do we need gradient descent for the robust regression problem, as opposed to just using the normal equations? Hint: it is NOT because of the non-differentiability. Recall that we used gradient descent even after smoothing away the non-differentiable part of the loss.
+\item What is the problem with having too small of a learning rate in gradient descent?
+\item What is the problem with having too large of a learning rate in gradient descent?
+\item What is the purpose of the log-sum-exp function and how is this related to gradient descent?
+\item What type of non-linear transform might be suitable if we had a periodic function?
+\end{enumerate}
+
+
+
+
+\section{Project Proposal (FOR CPSC 532M STUDENTS ONLY!)}
+
+If you are enrolled in CPSC 340, ignore this question.
+
+If you enrolled in CPSC 532M, for the final part of this assignment you must a \blu{submit a project proposal} for your course project. The proposal should be a maximum of 2 pages (and 1 page or half of a page is ok if you can describe your plan concisely). The proposal should be written for the instructors and the TAs, so you don't need to introduce any ML background but you will need to introduce non-ML topics. The projects must be done in groups of 2-3. If you are doing your assignment in a group that is different from your project group, only  1 group member should include the proposal as part of their submission (we'll do the merge across assignments, and this means that assignments could have multiple proposals). Please state clearly who is involved with each project proposal.
+
+There is quite a bit of flexibility in terms of the type of project you do, as I believe there are many ways that people can make valuable contributions to research. However, note that ultimately the final deliverable for the project will be a report containing at most 6 pages of text (the actual document can be longer due to figures, tables, references, and proofs) that emphasizes a particular ``contribution" (i.e., what doing the project has added to the world).
+The reason for this, even though it's strange for some possible projects, is that this is the standard way that results are communicated to the research community.
+
+\blu{The three mains ingredients of the project proposal are:
+\begin{enumerate}
+\item What problem you are focusing on.
+\item What you plan to do.
+\item What will be the ``contribution".
+\end{enumerate}
+}
+Also, note that for the course project that negative results (i.e., we tried something that we thought we would work in a particular setting but it didn't work) are acceptable (and often unavoidable).
+
+Here are some standard project ``templates" that you might want to follow:
+
+\items{
+\item \textbf{Application bake-off}: you pick a specific application (from your research, personal interests, or maybe from Kaggle) or a small number of related applications, and try out a bunch of techniques (e.g., random forests vs. logistic regression vs. generative models). In this case, the contribution would be showing that some methods work better than others for this specific application (or your contribution could be that everything works equally well/badly).
+\item \textbf{New application}: you pick an application where people aren't using ML, and you test out whether ML methods are effective for the task. In this case, the contribution would be knowing whether ML is suitable for the task.
+\item \textbf{Scaling up}: you pick a specific machine learning technique, and you try to figure out how to make it run faster or on larger datasets. In this case, the contribution would be the new technique and an evaluation of its performance, or could be a comparison of different ways to address the problem.
+\item \textbf{Improving performance}: you pick a specific machine learning technique, and try to extend it in some way to improve its performance. In this case, the contribution would be the new technique and an evaluation of its performance.
+\item \textbf{Generalization to new setting}: you pick a specific machine learning technique, and try to extend it to a new setting (for example, making a multi-label version of random forests).  In this case, the contribution would be the new technique and an evaluation of its performance, or could be a comparison of different ways to address the problem.
+\item \textbf{Perspective paper}: you pick a specific topic in ML, read at least 10 papers on the topic, then write a report summarizing what has been done on the topic and what are the most promising directions of future work. In this case, the contribution would be your summary of the relationships between the existing works, and your insights about where the field is going.
+\item \textbf{Coding project}: you pick a specific method or set of methods, and build an implementation of them. In this case, the contribution could be the implementation itself or a comparison of different ways to solve the problem.
+\item \textbf{Theory}: you pick a theoretical topic (like the variance of cross-validation), read what has been done about it, and try to prove a new result (usually by relaxing existing assumptions or adding new assumptions). The contribution could be a new analysis of an existing method, or why some approaches to analyzing the method will not work.
+\item \textbf{Reproducibility Challenge}: you take part in the 2019 ICLR reproducibility challenge, where you try to reproduce the results of a recently-submitted machine learning paper. Information on the challenge is available here: \url{https://reproducibility-challenge.github.io/iclr_2019}
+}
+The above are just suggestions, and many projects will mix several of these templates together, but if you are having trouble getting going then it's best to stick with one of the above templates. Also note that the project can focus on topics not covered in the course (like RNNs), so there is flexibility in the topic, but the topic should be closely-related to ML.
+
+\blu{This question is mandatory but will not be formally marked: it's just a sanity check that you have at least one project idea that fits within the scope of a 532M course project, and it's an excuse for you to allocate some time to thinking about the project.} Also, there is flexibility in the choice of project topics even after the proposal: if you want to explore different topics you can ultimately choose to do a project that is unrelated to the one in your proposal (and changing groups is ok too).
+
+
+\end{document}

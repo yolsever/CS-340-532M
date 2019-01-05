@@ -1,0 +1,76 @@
+q1
+q2
+logReg Training error 0.000
+logReg Validation error 0.084
+# nonZeros: 101
+
+q2.1
+The number of gradient descent iterations is: 36
+logRegL2 Training error 0.002
+logRegL2 Validation error 0.074
+# nonZeros: 101
+
+q2.2
+The number of gradient descent iterations is: 78
+logRegL1 Training error 0.000
+logRegL1 Validation error 0.052
+# nonZeros: 71
+
+q2.3
+Training error 0.000
+Validation error 0.020
+# nonZeros: 25
+
+q2.4
+L2 as discussed in the class did not use feature selection but minimized the weights. It achieved a higher validation error since it decreased the overfitting. L1 did some feature selection yet it achieved a perfect training score and a lower validation error. L0 took a lot of time to run because of the iterations yet it achieved a perfect training error and a whopping 2% validation error.
+
+q2.5
+L2 # nonZeros: 101
+Training error 0.002
+Validation error 0.074
+My results
+logRegL2 Training error 0.002
+logRegL2 Validation error 0.074
+# nonZeros: 101
+The results are the same for L2-regularization
+
+L1 # nonZeros: 71
+Training error 0.000
+Validation error 0.052
+My results
+logRegL1 Training error 0.000
+logRegL1 Validation error 0.052
+# nonZeros: 71
+The results are the same for L1-regularization
+
+2.5
+4)when lambda =1, min happens at w= 1.6
+5)when lambda =10, min happens at w= 0
+6)It behaves like L1 since it set the weight to 0 once lambda is 10. L2 never uses 0 weights
+7)
+
+3)
+leastSquaresClassifier Training error 0.160
+leastSquaresClassifier Validation error 0.134
+[1 2 3]
+
+3.1) It belongs to class 2 if the classes are zero-indexed
+
+3.2)
+logLinearClassifier Training error 0.084
+logLinearClassifier Validation error 0.070
+
+3.3)
+
+3.4) 
+Training error 0.000
+Validation error 0.008
+
+3.5) Scikit learn logistic one-for-all
+Training error 0.000
+Validation error 0.016
+
+
+2. Consider performing feature selection by measuring the \mutual information" between each column of X and the target label y, and selecting the features whose mutual information is above a certain threshold (meaning that the features provides a sucient number of \bits" that help in predicting the label values). Without delving into any details about mutual information, what is a potential problem with this approach?
+
+
